@@ -1,0 +1,33 @@
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: ticketmanagement-postgres
+    environment:
+      POSTGRES_DB: TicketManagementDb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+
+  api:
+    image: ticketmanagement-api-image
+    container_name: ticketmanagement-api-container
+    ports:
+      - "5186:8080"
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=TicketManagementDb;Username=postgres;Password=${POSTGRES_PASSWORD}"
+      Jwt__Key: ${JWT_KEY}
+      Jwt__Issuer: "TicketManagement.Api"
+      Jwt__Audience: "TicketManagement.Client"
+    depends_on:
+      - postgres
+
+  ui:
+    image: ticketmanagement-ui-image
+    container_name: ticketmanagement-ui-container
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+

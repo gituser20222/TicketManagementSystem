@@ -1,0 +1,51 @@
+@TicketManagement.Api_HostAddress = http://localhost:5186
+@username = testuser
+@password = Test123!
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjEiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoidGVzdHVzZXIiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJVc2VyIiwiZXhwIjoxNzg4MDI2MzMxLCJpc3MiOiJUaWNrZXRNYW5hZ2VtZW50LkFwaSIsImF1ZCI6IlRpY2tldE1hbmFnZW1lbnQuQ2xpZW50In0.-RALxKv_unItX9jvhr102WmWREfL7Tv8Mohr4UJmY0I
+### Login
+POST {{TicketManagement.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+   "username": "{{username}}",
+   "password": "{{password}}"
+}
+
+### Get all tickets
+GET {{TicketManagement.Api_HostAddress}}/api/tickets
+Authorization: Bearer {{token}}
+Accept: application/json
+
+### Get ticket by ID
+GET {{TicketManagement.Api_HostAddress}}/api/tickets/999
+Authorization: Bearer {{token}}
+Accept: application/json
+
+### Create a ticket
+POST {{TicketManagement.Api_HostAddress}}/api/tickets
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "title": "Cannot reset password",
+    "description": "User is unable to reset their password.",
+    "status": "Open",
+    "priority": "High"
+}
+
+### Update a ticket
+PUT {{TicketManagement.Api_HostAddress}}/api/tickets/12
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "title": "8/27 Updated ticket",
+    "description": "8/27 - This ticket was updated",
+    "status": "InProgress",
+    "priority": "High"
+}
+
+### Delete a ticket
+DELETE {{TicketManagement.Api_HostAddress}}/api/tickets/43
+Authorization: Bearer {{token}}
+
