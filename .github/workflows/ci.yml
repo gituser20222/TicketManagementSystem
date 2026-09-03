@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # .NET API
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --no-restore
+      - name: Test
+        run: dotnet test --no-build
+
+      # Set up Node.js for the React/TypeScript frontend
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Install dependencies for the React/TypeScript frontend
+      - name: Install UI dependencies
+        working-directory: TicketManagement.Ui
+        run: npm ci
+
+      # Build the React/TypeScript frontend
+      - name: Build UI
+        working-directory: TicketManagement.Ui
+        run: npm run build
+
+      # Run tests for the React/TypeScript frontend
+      - name: Test UI
+        working-directory: TicketManagement.Ui
+        run: npm test -- --run
