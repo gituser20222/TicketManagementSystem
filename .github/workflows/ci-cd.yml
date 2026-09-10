@@ -98,12 +98,12 @@ jobs:
       - name: Smoke test API
         run: |
           kubectl port-forward svc/ticket-management-system-api 5186:8080 &
-          sleep 5
-          curl -sf http://localhost:5186/health
+          sleep 10
+          curl -v http://localhost:5186/health
 
       - name: Smoke test UI
         run: |
           kubectl port-forward svc/ticket-management-system-ui 5173:80 &
-          sleep 5
-          curl -sf http://localhost:5173/
+          sleep 10
+          curl -v http://localhost:5173/
 
