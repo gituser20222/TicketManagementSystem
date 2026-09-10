@@ -101,6 +101,11 @@ jobs:
           sleep 10
           curl -v http://localhost:5186/health
 
+      # Show API logs if the smoke test fails
+      - name: API logs on failure
+        if: failure()
+        run: kubectl logs deployment/ticket-management-system-api --tail=100
+
       - name: Smoke test UI
         run: |
           kubectl port-forward svc/ticket-management-system-ui 5173:80 &
