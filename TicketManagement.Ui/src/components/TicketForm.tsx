@@ -1,50 +1,50 @@
-import { useState } from 'react'
+import { useState } from "react";
 
 interface TicketFormProps {
-  onTicketCreated: () => void
-  token: string
+  onTicketCreated: () => void;
+  token: string;
 }
 
 function TicketForm({ onTicketCreated, token }: TicketFormProps) {
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [status, setStatus] = useState('Open')
-  const [priority, setPriority] = useState('Low')
-  const [error, setError] = useState('')
-  const [isCreating, setIsCreating] = useState(false)
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [status, setStatus] = useState("Open");
+  const [priority, setPriority] = useState("Low");
+  const [error, setError] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
 
   const handleCreateTicket = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    setError('')
+    setError("");
 
     if (!title.trim()) {
-      setError('Title is required.')
-      return
+      setError("Title is required.");
+      return;
     }
 
     if (title.trim().length < 3 || title.trim().length > 100) {
-      setError('Title must be between 3 and 100 characters.')
-      return
+      setError("Title must be between 3 and 100 characters.");
+      return;
     }
 
     if (!description.trim()) {
-      setError('Description is required.')
-      return
+      setError("Description is required.");
+      return;
     }
 
     if (description.trim().length < 5 || description.trim().length > 500) {
-      setError('Description must be between 5 and 500 characters.')
-      return
+      setError("Description must be between 5 and 500 characters.");
+      return;
     }
 
-    setIsCreating(true)
+    setIsCreating(true);
 
     try {
-      const response = await fetch('http://localhost:5186/api/Tickets', {
-        method: 'POST',
+      const response = await fetch("http://localhost:5186/api/Tickets", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
@@ -53,24 +53,24 @@ function TicketForm({ onTicketCreated, token }: TicketFormProps) {
           status,
           priority,
         }),
-      })
+      });
 
       if (response.ok) {
-        setTitle('')
-        setDescription('')
-        setStatus('Open')
-        setPriority('Low')
-        onTicketCreated()
+        setTitle("");
+        setDescription("");
+        setStatus("Open");
+        setPriority("Low");
+        onTicketCreated();
       } else {
-        const errorMessage = await response.text()
-        setError(errorMessage || 'Failed to create ticket.')
+        const errorMessage = await response.text();
+        setError(errorMessage || "Failed to create ticket.");
       }
     } catch {
-      setError('Unable to connect to the API.')
+      setError("Unable to connect to the API.");
     } finally {
-      setIsCreating(false)
+      setIsCreating(false);
     }
-  }
+  };
 
   return (
     <form onSubmit={handleCreateTicket} className="ticket-form">
@@ -88,8 +88,8 @@ function TicketForm({ onTicketCreated, token }: TicketFormProps) {
           maxLength={100}
           required
           onChange={(e) => {
-            setTitle(e.target.value)
-            setError('')
+            setTitle(e.target.value);
+            setError("");
           }}
         />
       </div>
@@ -105,8 +105,8 @@ function TicketForm({ onTicketCreated, token }: TicketFormProps) {
           maxLength={500}
           required
           onChange={(e) => {
-            setDescription(e.target.value)
-            setError('')
+            setDescription(e.target.value);
+            setError("");
           }}
         />
       </div>
@@ -141,17 +141,13 @@ function TicketForm({ onTicketCreated, token }: TicketFormProps) {
         </div>
       </div>
 
-      <button
-        type="submit"
-        className="create-button"
-        disabled={isCreating}
-      >
-        {isCreating ? 'Creating...' : 'Create Ticket'}
+      <button type="submit" className="create-button" disabled={isCreating}>
+        {isCreating ? "Creating..." : "Create Ticket"}
       </button>
 
       {error && <p className="form-error">{error}</p>}
     </form>
-  )
+  );
 }
 
-export default TicketForm
+export default TicketForm;

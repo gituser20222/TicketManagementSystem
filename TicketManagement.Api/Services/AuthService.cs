@@ -21,7 +21,7 @@ public class AuthService : IAuthService
         _context = context;
         _configuration = configuration;
     }
-    
+
     public async Task<LoginResponse?> LoginAsync(LoginRequest request)
     {
         var user = await _context.Users

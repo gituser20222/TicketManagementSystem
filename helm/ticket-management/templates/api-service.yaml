@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ticket-management.fullname" . }}-api
+spec:
+  selector:
+    app: {{ include "ticket-management.fullname" . }}-api
+  ports:
+    - port: {{ .Values.api.port }}
+      targetPort: {{ .Values.api.port }}

@@ -1,9 +1,9 @@
 export interface Ticket {
-  id: number
-  title: string
-  description: string
-  status: string
-  priority: string
-  createdDate: string
-  createdByUserId: number
+  id: number;
+  title: string;
+  description: string;
+  status: string;
+  priority: string;
+  createdDate: string;
+  createdByUserId: number;
 }

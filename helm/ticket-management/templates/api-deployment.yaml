@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ticket-management.fullname" . }}-api
+spec:
+  replicas: {{ .Values.api.replicas }}
+  selector:
+    matchLabels:
+      app: {{ include "ticket-management.fullname" . }}-api
+  template:
+    metadata:
+      labels:
+        app: {{ include "ticket-management.fullname" . }}-api
+    spec:
+      containers:
+        - name: api
+          image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
+          imagePullPolicy: Never # image is loaded into kind directly, not pulled from a registry
+          ports:
+            - containerPort: {{ .Values.api.port }}
+
+          env:
+            # PostgreSQL password comes from the Kubernetes Secret first
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ticket-management.fullname" . }}-secrets
+                  key: postgres-password
+
+            # Connection string uses the POSTGRES_PASSWORD environment variable
+            - name: ConnectionStrings__DefaultConnection
+              value: "Host={{ include "ticket-management.fullname" . }}-postgres;Port={{ .Values.postgres.port }};Database={{ .Values.postgres.db }};Username={{ .Values.postgres.user }};Password=$(POSTGRES_PASSWORD)"
+
+            # JWT key comes from the Kubernetes Secret
+            - name: Jwt__Key
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ticket-management.fullname" . }}-secrets
+                  key: jwt-key
+
+            - name: Jwt__Issuer
+              value: "TicketManagement.Api"
+
+            - name: Jwt__Audience
+              value: "TicketManagement.Client"

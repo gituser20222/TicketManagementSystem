@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ticket-management.fullname" . }}-ui
+spec:
+  replicas: {{ .Values.ui.replicas }}
+  selector:
+    matchLabels:
+      app: {{ include "ticket-management.fullname" . }}-ui
+  template:
+    metadata:
+      labels:
+        app: {{ include "ticket-management.fullname" . }}-ui
+    spec:
+      containers:
+        - name: ui
+          image: "{{ .Values.ui.image.repository }}:{{ .Values.ui.image.tag }}"
+          imagePullPolicy: Never # image is loaded into kind directly, not pulled from a registry
+          ports:
+            - containerPort: {{ .Values.ui.port }}
