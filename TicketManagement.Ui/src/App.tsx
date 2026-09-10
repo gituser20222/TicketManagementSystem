@@ -1,100 +1,99 @@
-import { useEffect, useState } from 'react'
-import { jwtDecode } from 'jwt-decode'
-import './App.css'
-import Login from './components/Login'
-import type { Ticket } from './types/Ticket'
-import TicketList from './components/TicketList'
-import TicketForm from './components/TicketForm'
+import { useCallback, useEffect, useState } from "react";
+import { jwtDecode } from "jwt-decode";
+import "./App.css";
+import Login from "./components/Login";
+import type { Ticket } from "./types/Ticket";
+import TicketList from "./components/TicketList";
+import TicketForm from "./components/TicketForm";
 
 interface JwtPayload {
-  [key: string]: unknown
+  [key: string]: unknown;
 }
 
 function App() {
-  const [token, setToken] = useState('')
-  const [tickets, setTickets] = useState<Ticket[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [token, setToken] = useState("");
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const getUsername = () => {
     if (!token) {
-      return ''
+      return "";
     }
 
     try {
-      const decoded = jwtDecode<JwtPayload>(token)
+      const decoded = jwtDecode<JwtPayload>(token);
 
       return String(
-        decoded[
-          'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'
-        ] ?? ''
-      )
+        decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"] ??
+          "",
+      );
     } catch {
-      return ''
+      return "";
     }
-  }
+  };
 
   const getRole = () => {
     if (!token) {
-      return ''
+      return "";
     }
 
     try {
-      const decoded = jwtDecode<JwtPayload>(token)
+      const decoded = jwtDecode<JwtPayload>(token);
 
       return String(
         decoded[
-          'http://schemas.microsoft.com/ws/2008/06/identity/claims/role'
-        ] ?? ''
-      )
+          "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+        ] ?? "",
+      );
     } catch {
-      return ''
+      return "";
     }
-  }
+  };
 
-  const loadTickets = async () => {
+  const loadTickets = useCallback(async () => {
     try {
-      const response = await fetch(
-        'http://localhost:5186/api/Tickets',
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
+      const response = await fetch("http://localhost:5186/api/Tickets", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (!response.ok) {
-        throw new Error('Failed to load tickets')
+        throw new Error("Failed to load tickets");
       }
 
-      const data: Ticket[] = await response.json()
-      setTickets(data)
+      const data: Ticket[] = await response.json();
+      setTickets(data);
     } catch {
-      setError('Unable to load tickets.')
+      setError("Unable to load tickets.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  }, [token]);
 
   const handleLogout = () => {
-    setToken('')
-    setTickets([])
-    setError('')
-    setLoading(true)
-  }
+    setToken("");
+    setTickets([]);
+    setError("");
+    setLoading(true);
+  };
 
   useEffect(() => {
     if (token) {
-      loadTickets()
+      // setState in loadTickets only runs after its internal `await`;
+      // known false positive: https://github.com/facebook/react/issues/34743
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      loadTickets();
     }
-  }, [token])
+  }, [token, loadTickets]);
 
   if (!token) {
-    return <Login onLogin={setToken} />
+    return <Login onLogin={setToken} />;
   }
 
-  const username = getUsername()
-  const role = getRole()
+  const username = getUsername();
+  const role = getRole();
 
   return (
     <div className="app">
@@ -112,10 +111,7 @@ function App() {
 
       <main className="app-content">
         <section className="create-section">
-          <TicketForm
-            onTicketCreated={loadTickets}
-            token={token}
-          />
+          <TicketForm onTicketCreated={loadTickets} token={token} />
         </section>
 
         <section className="tickets-section">
@@ -140,7 +136,7 @@ function App() {
         </section>
       </main>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

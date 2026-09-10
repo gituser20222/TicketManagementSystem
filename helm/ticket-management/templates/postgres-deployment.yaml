@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ticket-management.fullname" . }}-postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "ticket-management.fullname" . }}-postgres
+  template:
+    metadata:
+      labels:
+        app: {{ include "ticket-management.fullname" . }}-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: {{ .Values.postgres.image }}
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: {{ .Values.postgres.db }}
+            - name: POSTGRES_USER
+              value: {{ .Values.postgres.user }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ticket-management.fullname" . }}-secrets
+                  key: postgres-password
+          # No persistent volume: portfolio/demo setup, data resets on pod restart.

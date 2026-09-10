@@ -1,0 +1,26 @@
+api:
+  image:
+    repository: ticketmanagement-api-image
+    tag: latest
+  port: 8080
+  replicas: 1
+
+ui:
+  image:
+    repository: ticketmanagement-ui-image
+    tag: latest
+  port: 80
+  replicas: 1
+
+postgres:
+  image: postgres:16
+  db: TicketManagementDb
+  user: postgres
+  port: 5432
+
+# Override these at install time, don't commit real values:
+#   helm install ticket-management-system ./helm/ticket-management \
+#     --set secrets.postgresPassword=... --set secrets.jwtKey=...
+secrets:
+  postgresPassword: changeme
+  jwtKey: changeme-super-secret-key-min-32-chars

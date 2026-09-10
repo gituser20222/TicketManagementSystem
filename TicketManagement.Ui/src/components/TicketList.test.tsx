@@ -1,24 +1,24 @@
-import '@testing-library/jest-dom/vitest'
+import "@testing-library/jest-dom/vitest";
 
-import { render, screen } from '@testing-library/react'
+import { render, screen } from "@testing-library/react";
 
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi } from "vitest";
 
-import TicketList from './TicketList'
+import TicketList from "./TicketList";
 
-describe('TicketList', () => {
-  it('renders ticket title', () => {
+describe("TicketList", () => {
+  it("renders ticket title", () => {
     const tickets = [
       {
         id: 1,
-        title: 'Test Ticket',
-        description: 'Test Description',
-        status: 'Open',
-        priority: 'Low',
-        createdDate: '2026-08-29',
+        title: "Test Ticket",
+        description: "Test Description",
+        status: "Open",
+        priority: "Low",
+        createdDate: "2026-08-29",
         createdByUserId: 1,
-      }
-    ]
+      },
+    ];
 
     render(
       <TicketList
@@ -26,33 +26,33 @@ describe('TicketList', () => {
         role="User"
         token="test-token"
         onTicketsUpdated={vi.fn()}
-      />
-    )
+      />,
+    );
 
-    expect(screen.getByText('Test Ticket')).toBeInTheDocument()
-  })
+    expect(screen.getByText("Test Ticket")).toBeInTheDocument();
+  });
 
-  it('renders multiple tickets', () => {
+  it("renders multiple tickets", () => {
     const tickets = [
       {
         id: 1,
-        title: 'First Ticket',
-        description: 'First Description',
-        status: 'Open',
-        priority: 'Low',
-        createdDate: '2026-08-29',
+        title: "First Ticket",
+        description: "First Description",
+        status: "Open",
+        priority: "Low",
+        createdDate: "2026-08-29",
         createdByUserId: 1,
       },
       {
         id: 2,
-        title: 'Second Ticket',
-        description: 'Second Description',
-        status: 'Closed',
-        priority: 'High',
-        createdDate: '2026-08-29',
+        title: "Second Ticket",
+        description: "Second Description",
+        status: "Closed",
+        priority: "High",
+        createdDate: "2026-08-29",
         createdByUserId: 2,
-      }
-    ]
+      },
+    ];
 
     render(
       <TicketList
@@ -60,11 +60,11 @@ describe('TicketList', () => {
         role="User"
         token="test-token"
         onTicketsUpdated={vi.fn()}
-      />
-    )
+      />,
+    );
 
-    expect(screen.getByText('First Ticket')).toBeInTheDocument()
+    expect(screen.getByText("First Ticket")).toBeInTheDocument();
 
-    expect(screen.getByText('Second Ticket')).toBeInTheDocument()
-  })
-})
+    expect(screen.getByText("Second Ticket")).toBeInTheDocument();
+  });
+});

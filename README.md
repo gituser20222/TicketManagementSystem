@@ -34,6 +34,7 @@ The project was built as a practical portfolio application to demonstrate modern
 * Vite
 * JWT Authentication
 * Docker / Docker Compose
+* Kubernetes (kind — Kubernetes IN Docker)
 * xUnit
 * Vitest
 * Git / GitHub
@@ -296,6 +297,80 @@ The API container connects internally to:
 ```text
 postgres:5432
 ```
+
+## Kubernetes (kind + Helm)
+
+For local Kubernetes deployment, this project includes a Helm chart (`helm/ticket-management/`) and a [kind](https://kind.sigs.k8s.io/) cluster config (`kind-config.yaml`). Requires `kind`, `kubectl`, and `helm` installed.
+
+### Create the cluster
+
+```bash
+kind create cluster --config kind-config.yaml
+```
+
+### Build and load images
+
+kind doesn't pull from Docker Hub for local images — build them, then load into the cluster:
+
+```bash
+docker build -t ticketmanagement-api-image ./TicketManagement.Api
+docker build -t ticketmanagement-ui-image ./TicketManagement.Ui
+kind load docker-image ticketmanagement-api-image --name ticket-management
+kind load docker-image ticketmanagement-ui-image --name ticket-management
+```
+
+### Install the chart
+
+```bash
+helm install ticket-management ./helm/ticket-management \
+  --set secrets.postgresPassword=yourpassword \
+  --set secrets.jwtKey=your-jwt-signing-key-min-32-chars
+```
+
+### Access the app
+
+```bash
+### Access the app
+
+Run in Terminal 1:
+
+kubectl port-forward svc/ticket-management-system-ui 5173:80
+
+Run in Terminal 2:
+
+kubectl port-forward svc/ticket-management-system-api 5186:8080
+```
+
+Then open `http://localhost:5173`.
+
+### Tear down
+
+```bash
+helm uninstall ticket-management
+kind delete cluster --name ticket-management
+```
+
+Note: Postgres has no persistent volume in this chart — data resets whenever the pod restarts. Fine for local/demo use; a real deployment would add a `PersistentVolumeClaim` and (optionally) an Ingress controller instead of `port-forward`.
+
+## CI/CD (GitHub Actions)
+
+### Continuous Integration
+
+`.github/workflows/ci.yml` runs on every push to `main`:
+
+* Restores, builds, and tests the API (`dotnet restore` / `build` / `test`)
+* Installs dependencies, builds, and tests the UI (`npm ci`, `npm run build`, `npm test`)
+
+### Continuous Deployment
+
+The `deploy-to-kind` job in the same workflow:
+
+* Runs only when triggered manually (`workflow_dispatch` — a "Run workflow" button on the workflow's page in the **Actions** tab), and only after `build-and-test` passes (`needs:`)
+* Builds the API/UI images, spins up an ephemeral `kind` cluster on the runner (`kind-config.yaml`), loads the images, then `helm upgrade --install`s the chart
+* Verifies the deployment with `kubectl rollout status` on all three Deployments
+* Secrets (`POSTGRES_PASSWORD`, `JWT_KEY`) come from GitHub Actions repository secrets and are passed via `--set` — the runner never sees `.env`, since that file is local-only and gitignored
+
+Before running it, add `POSTGRES_PASSWORD` and `JWT_KEY` as repository secrets: repo **Settings → Secrets and variables → Actions → New repository secret**.
 
 ## Database
 

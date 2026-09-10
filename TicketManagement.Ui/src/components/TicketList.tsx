@@ -1,12 +1,12 @@
-import { useState } from 'react'
+import { useState } from "react";
 
-import type { Ticket } from '../types/Ticket'
+import type { Ticket } from "../types/Ticket";
 
 interface TicketListProps {
-  tickets: Ticket[]
-  role: string
-  token: string
-  onTicketsUpdated: () => void
+  tickets: Ticket[];
+  role: string;
+  token: string;
+  onTicketsUpdated: () => void;
 }
 
 function TicketList({
@@ -15,66 +15,66 @@ function TicketList({
   token,
   onTicketsUpdated,
 }: TicketListProps) {
-  const [editingTicketId, setEditingTicketId] = useState<number | null>(null)
-  const [editTitle, setEditTitle] = useState('')
-  const [editDescription, setEditDescription] = useState('')
-  const [editStatus, setEditStatus] = useState('')
-  const [editPriority, setEditPriority] = useState('')
-  const [editError, setEditError] = useState('')
+  const [editingTicketId, setEditingTicketId] = useState<number | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editStatus, setEditStatus] = useState("");
+  const [editPriority, setEditPriority] = useState("");
+  const [editError, setEditError] = useState("");
 
   function startEditing(ticket: Ticket) {
-    setEditingTicketId(ticket.id)
-    setEditTitle(ticket.title)
-    setEditDescription(ticket.description)
+    setEditingTicketId(ticket.id);
+    setEditTitle(ticket.title);
+    setEditDescription(ticket.description);
 
-    if (ticket.status === 'In Progress') {
-      setEditStatus('InProgress')
+    if (ticket.status === "In Progress") {
+      setEditStatus("InProgress");
     } else {
-      setEditStatus(ticket.status)
+      setEditStatus(ticket.status);
     }
 
-    setEditPriority(ticket.priority)
-    setEditError('')
+    setEditPriority(ticket.priority);
+    setEditError("");
   }
 
   function cancelEditing() {
-    setEditingTicketId(null)
-    setEditError('')
+    setEditingTicketId(null);
+    setEditError("");
   }
 
   async function saveTicket(ticketId: number) {
-    setEditError('')
+    setEditError("");
 
     if (!editTitle.trim()) {
-      setEditError('Title is required.')
-      return
+      setEditError("Title is required.");
+      return;
     }
 
     if (editTitle.trim().length < 3 || editTitle.trim().length > 100) {
-      setEditError('Title must be between 3 and 100 characters.')
-      return
+      setEditError("Title must be between 3 and 100 characters.");
+      return;
     }
 
     if (!editDescription.trim()) {
-      setEditError('Description is required.')
-      return
+      setEditError("Description is required.");
+      return;
     }
 
     if (
       editDescription.trim().length < 5 ||
       editDescription.trim().length > 500
     ) {
-      setEditError('Description must be between 5 and 500 characters.')
-      return
+      setEditError("Description must be between 5 and 500 characters.");
+      return;
     }
 
     try {
       const response = await fetch(
         `http://localhost:5186/api/Tickets/${ticketId}`,
         {
-          method: 'PUT',
+          method: "PUT",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
@@ -84,21 +84,21 @@ function TicketList({
             priority: editPriority,
           }),
         },
-      )
+      );
 
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error('Update failed:', errorText)
-        setEditError('Failed to update ticket.')
-        return
+        const errorText = await response.text();
+        console.error("Update failed:", errorText);
+        setEditError("Failed to update ticket.");
+        return;
       }
 
-      setEditingTicketId(null)
-      setEditError('')
-      onTicketsUpdated()
+      setEditingTicketId(null);
+      setEditError("");
+      onTicketsUpdated();
     } catch (error) {
-      console.error(error)
-      setEditError('Unable to connect to the API.')
+      console.error(error);
+      setEditError("Unable to connect to the API.");
     }
   }
 
@@ -111,7 +111,7 @@ function TicketList({
             <th className="ticket-description-column">Description</th>
             <th className="ticket-status-column">Status</th>
             <th className="ticket-priority-column">Priority</th>
-            {role === 'Admin' && <th>Actions</th>}
+            {role === "Admin" && <th>Actions</th>}
           </tr>
         </thead>
 
@@ -129,8 +129,8 @@ function TicketList({
                         minLength={3}
                         maxLength={100}
                         onChange={(e) => {
-                          setEditTitle(e.target.value)
-                          setEditError('')
+                          setEditTitle(e.target.value);
+                          setEditError("");
                         }}
                       />
                     </div>
@@ -144,8 +144,8 @@ function TicketList({
                         minLength={5}
                         maxLength={500}
                         onChange={(e) => {
-                          setEditDescription(e.target.value)
-                          setEditError('')
+                          setEditDescription(e.target.value);
+                          setEditError("");
                         }}
                       />
                     </div>
@@ -177,20 +177,16 @@ function TicketList({
                     </div>
                   </td>
 
-                  {role === 'Admin' && (
+                  {role === "Admin" && (
                     <td>
                       <div className="ticket-edit">
                         <button onClick={() => saveTicket(ticket.id)}>
                           Save
                         </button>
 
-                        <button onClick={cancelEditing}>
-                          Cancel
-                        </button>
+                        <button onClick={cancelEditing}>Cancel</button>
 
-                        {editError && (
-                          <p className="form-error">{editError}</p>
-                        )}
+                        {editError && <p className="form-error">{editError}</p>}
                       </div>
                     </td>
                   )}
@@ -205,11 +201,9 @@ function TicketList({
 
                   <td>{ticket.priority}</td>
 
-                  {role === 'Admin' && (
+                  {role === "Admin" && (
                     <td>
-                      <button onClick={() => startEditing(ticket)}>
-                        Edit
-                      </button>
+                      <button onClick={() => startEditing(ticket)}>Edit</button>
                     </td>
                   )}
                 </>
@@ -219,7 +213,7 @@ function TicketList({
         </tbody>
       </table>
     </div>
-  )
+  );
 }
 
-export default TicketList
+export default TicketList;

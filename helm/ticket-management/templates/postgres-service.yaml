@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ticket-management.fullname" . }}-postgres
+spec:
+  selector:
+    app: {{ include "ticket-management.fullname" . }}-postgres
+  ports:
+    - port: {{ .Values.postgres.port }}
+      targetPort: 5432

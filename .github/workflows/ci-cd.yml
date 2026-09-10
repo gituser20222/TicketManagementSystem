@@ -1,0 +1,109 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # .NET API
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore
+
+      - name: Test
+        run: dotnet test --no-build
+
+      # React/TypeScript frontend
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install UI dependencies
+        working-directory: TicketManagement.Ui
+        run: npm ci
+
+      - name: Build UI
+        working-directory: TicketManagement.Ui
+        run: npm run build
+
+      - name: Test UI
+        working-directory: TicketManagement.Ui
+        run: npm test -- --run
+
+  # Deploys the application to a temporary Kind cluster.
+  # This job only runs when the workflow is manually started.
+  deploy-to-kind:
+    needs: build-and-test
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Create the Kind cluster
+      - name: Create kind cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: ticket-management-system
+          config: kind-config.yaml
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+
+      # Build Docker images
+      - name: Build API image
+        run: docker build -t ticketmanagement-api-image ./TicketManagement.Api
+
+      - name: Build UI image
+        run: docker build -t ticketmanagement-ui-image ./TicketManagement.Ui
+
+      # Load local Docker images into Kind
+      - name: Load images into kind
+        run: |
+          kind load docker-image ticketmanagement-api-image --name ticket-management-system
+          kind load docker-image ticketmanagement-ui-image --name ticket-management-system
+
+      # Deploy using Helm
+      - name: Deploy Helm chart
+        run: |
+          helm upgrade --install ticket-management-system ./helm/ticket-management \
+            --set secrets.postgresPassword="${{ secrets.POSTGRES_PASSWORD }}" \
+            --set secrets.jwtKey="${{ secrets.JWT_KEY }}" \
+            --wait --timeout 120s
+
+      # Verify the API responds
+      - name: Smoke test API
+        run: |
+          kubectl port-forward svc/ticket-management-system-api 5186:8080 &
+          sleep 5
+          curl -sf http://localhost:5186/health
+
+      - name: Smoke test UI
+        run: |
+          kubectl port-forward svc/ticket-management-system-ui 5173:80 &
+          sleep 5
+          curl -sf http://localhost:5173/
+
