@@ -11,6 +11,7 @@ services:
       - "5432:5432"
 
   api:
+    build: ./TicketManagement.Api
     image: ticketmanagement-api-image
     container_name: ticketmanagement-api-container
     ports:
@@ -24,10 +25,10 @@ services:
       - postgres
 
   ui:
+    build: ./TicketManagement.Ui
     image: ticketmanagement-ui-image
     container_name: ticketmanagement-ui-container
     ports:
       - "5173:80"
     depends_on:
       - api
-

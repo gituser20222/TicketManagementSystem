@@ -9,3 +9,5 @@ Notes/
 # Node
 **/node_modules/
 **/dist/
+# Editor
+.vscode/settings.json
