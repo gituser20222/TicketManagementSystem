@@ -29,6 +29,10 @@ docker compose up -d
 | API reference (Scalar) | http://localhost:5186/scalar |
 | Health check | http://localhost:5186/health |
 
+The API applies EF Core migrations on startup, and the Compose setup creates **demo-only** users so you can sign in straight away: `testadmin` (Admin, can edit and delete) and `testuser1` / `testuser2` (own tickets only). For their password, check the value in your `.env` file; set it to whatever you like before starting.
+
+Demo users are controlled by `Seed__DemoUsers` / `Seed__DemoPassword`. Compose enables them; the Helm chart does not by default (`--set seed.demoUsers=true --set secrets.demoPassword=...` to enable), so a real deployment never ships a known login.
+
 Stop with `docker compose down`. `.env` is gitignored; `.env.example` holds placeholders only.
 
 ## Architecture
@@ -42,7 +46,7 @@ Browser ──> React/TypeScript (Vite build, nginx) ──> ASP.NET Core API �
 
 * **API:** controllers over a service layer (`ITicketService`, `IAuthService`) with DTOs at the boundary and a single EF Core `DbContext`. Services are registered through dependency injection.
 * **Auth:** stateless JWT bearer tokens validated for issuer, audience, lifetime and signing key. Ticket access is scoped by ownership, and edit/delete require the `Admin` role.
-* **Data:** EF Core migrations own the schema. Passwords are stored as ASP.NET Core Identity password hashes.
+* **Data:** EF Core migrations own the schema and are applied automatically at startup, with a retry while the database comes up. Passwords are stored as ASP.NET Core Identity password hashes.
 * **API contract:** OpenAPI document with a Scalar reference UI. Enum values are serialized as readable strings (e.g. `"In Progress"`).
 * **Client:** React functional components and hooks, with client-side validation mirroring the API rules.
 
@@ -61,7 +65,7 @@ The kind deployment loads locally built images into the cluster and exposes serv
 
 * **Tests:** xUnit for services and controllers (`dotnet test`), Vitest for the UI (`npm test`).
 * **Pipeline:** GitHub Actions builds and tests the API and UI on every push and pull request to `main`.
-* **Deploy check:** a manually triggered job stands up an ephemeral kind cluster on the runner, installs the Helm chart, and verifies the rollout, using repository secrets rather than `.env`.
+* **Deploy check:** a manually triggered job stands up an ephemeral kind cluster on the runner, installs the Helm chart, and smoke-tests the API (`/health`) and the UI (`/`), using repository secrets rather than `.env`.
 
 ## Repository layout
 
@@ -81,6 +85,11 @@ kind-config.yaml             Local Kubernetes cluster
 | --- | --- |
 | `POSTGRES_PASSWORD` | PostgreSQL password |
 | `JWT_KEY` | Signing key for JWT tokens |
+
+| `API_URL` | Optional. Public API address baked into the UI at build time (default `http://localhost:5186`) |
+| `UI_ORIGIN` | Optional. Browser origin the API allows through CORS (default `http://localhost:5173`) |
+
+To run somewhere other than localhost, set `API_URL` and `UI_ORIGIN` in `.env` and rebuild (`docker compose up -d --build`). In Kubernetes, set `api.allowedOrigins` in the Helm values and pass `--build-arg VITE_API_URL=...` when building the UI image.
 
 Never commit real secrets.
 

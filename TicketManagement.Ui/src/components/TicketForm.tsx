@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { API_URL } from "../config";
 
 interface TicketFormProps {
   onTicketCreated: () => void;
@@ -41,7 +42,7 @@ function TicketForm({ onTicketCreated, token }: TicketFormProps) {
     setIsCreating(true);
 
     try {
-      const response = await fetch("http://localhost:5186/api/Tickets", {
+      const response = await fetch(`${API_URL}/api/Tickets`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

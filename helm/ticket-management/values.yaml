@@ -1,4 +1,6 @@
 api:
+  # Browser origins allowed by CORS (comma-separated). Must match the URL the UI is served from.
+  allowedOrigins: "http://localhost:5173"
   image:
     repository: ticketmanagement-api-image
     tag: latest
@@ -18,9 +20,15 @@ postgres:
   user: postgres
   port: 5432
 
+# Demo users (testadmin, testuser1, testuser2). Off by default: enable only for demos with
+#   --set seed.demoUsers=true --set secrets.demoPassword=<your-demo-password>
+seed:
+  demoUsers: false
+
 # Override these at install time, don't commit real values:
 #   helm install ticket-management-system ./helm/ticket-management \
 #     --set secrets.postgresPassword=... --set secrets.jwtKey=...
 secrets:
   postgresPassword: changeme
   jwtKey: changeme-super-secret-key-min-32-chars
+  demoPassword: "" # required with seed.demoUsers=true: --set secrets.demoPassword=...

@@ -5,6 +5,7 @@ import Login from "./components/Login";
 import type { Ticket } from "./types/Ticket";
 import TicketList from "./components/TicketList";
 import TicketForm from "./components/TicketForm";
+import { API_URL } from "./config";
 
 interface JwtPayload {
   [key: string]: unknown;
@@ -53,7 +54,7 @@ function App() {
 
   const loadTickets = useCallback(async () => {
     try {
-      const response = await fetch("http://localhost:5186/api/Tickets", {
+      const response = await fetch(`${API_URL}/api/Tickets`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
