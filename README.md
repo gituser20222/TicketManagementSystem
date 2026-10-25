@@ -1,301 +1,131 @@
 # Ticket Management System
 
-A full-stack ticket management application built with ASP.NET Core, React, TypeScript, Entity Framework Core, PostgreSQL, JWT authentication, and Docker.
+A web app for tracking requests from submission to resolution, with role-based access so people only see and change what they should.
 
-## Project Overview
+## The problem
 
-The Ticket Management System is a full-stack web application for creating and managing support tickets.
+Requests that arrive by email, chat, and spreadsheets are easy to lose. Nobody can say who owns a request, what state it is in, or how urgent it is. Reporting turns into digging through inboxes.
 
-Users can log in and view tickets they are authorized to access. They can create tickets with a title, description, status, and priority. Administrators have additional permissions to edit tickets.
+This app puts every request in one place. Each ticket has a title, description, status (Open, In Progress, Closed), and priority (Low, Medium, High). Staff see the tickets they are authorized to access. Administrators can also edit and delete them.
 
-The project demonstrates:
+**Who it's for:** small teams that handle a steady flow of requests (support, internal service, records or information requests) and need a simple shared queue. It is also a portfolio project showing a complete .NET + React stack, tested and containerized.
 
-* ASP.NET Core Web API
-* Entity Framework Core
-* PostgreSQL
-* React and TypeScript
-* JWT authentication
-* Role-based authorization
-* Input validation and error handling
-* Logging
-* Backend and frontend testing
-* Docker and Docker Compose
-* REST API and frontend integration
+![Ticket list, logged in as an admin](docs/screenshot.png)
 
-The project was built as a practical portfolio application to demonstrate modern full-stack development and the ability to design, build, test, and containerize an application.
+![alt text](image-1.png)
 
-## Technologies
+## Quick start
 
-* ASP.NET Core / .NET 10 Web API
-* Entity Framework Core
-* PostgreSQL 16
-* React
-* TypeScript
-* Vite
-* JWT Authentication
-* Docker / Docker Compose
-* Kubernetes (kind — Kubernetes IN Docker)
-* xUnit
-* Vitest
-* Git / GitHub
-
-## Project Structure
-
-```text
-TicketManagement/
-
-├── TicketManagement.Api/     # ASP.NET Core Web API
-├── TicketManagement.Ui/      # React + TypeScript frontend
-├── docker-compose.yml        # Runs the complete application
-├── .env.example              # Environment variable template
-├── .gitignore
-└── README.md
-```
-
-## Prerequisites
-
-Install:
-
-* Git
-* Docker Desktop
-
-The application can be run using Docker Compose, so .NET and Node.js are not required to run the application through Docker.
-
-## Initial Setup
-
-Clone the repository:
+You need Git and Docker Desktop. .NET and Node.js are not required.
 
 ```bash
 git clone <repository-url>
 cd TicketManagement
-```
-
-Create the local environment file:
-
-```bash
-cp .env.example .env
-```
-
-Open `.env` and provide your own local values:
-
-```env
-POSTGRES_PASSWORD=your-postgres-password
-JWT_KEY=your-jwt-secret-key
-```
-
-Do not commit `.env` to Git. It contains local secrets.
-
-`.env.example` is safe to commit because it contains placeholder values.
-
-## Run the Application
-
-From the project root:
-
-```bash
-docker compose up
-```
-
-Or run in the background:
-
-```bash
+cp .env.example .env     # then set POSTGRES_PASSWORD and JWT_KEY in .env
 docker compose up -d
 ```
 
-Docker Compose starts:
+Open the app:
 
-* PostgreSQL
-* ASP.NET Core API
-* React frontend
+| Service | URL |
+| --- | --- |
+| Frontend | http://localhost:5173 |
+| API | http://localhost:5186 |
+| API docs (Scalar) | http://localhost:5186/scalar |
+| Health check | http://localhost:5186/health |
+| PostgreSQL | localhost:5432 |
 
-The application uses a Docker network so the API connects to PostgreSQL using the service name:
+Never commit `.env`; it holds local secrets. `.env.example` contains placeholders only.
+
+Stop everything with `docker compose down`.
+
+## Features
+
+* JWT login; protected ticket endpoints return `401 Unauthorized` without a token
+* Role-based authorization: Admin role required to edit or delete tickets
+* Create, view, update, and delete tickets
+* Validation on both client and API (invalid input returns `400 Bad Request`)
+* Logging via ASP.NET Core
+* Backend (xUnit) and frontend (Vitest) tests, run in CI
+* Docker Compose, plus a Helm chart for local Kubernetes (kind)
+
+## Tech stack
+
+ASP.NET Core / .NET 10, Entity Framework Core, PostgreSQL 16, React, TypeScript, Vite, xUnit, Vitest, Docker Compose, Kubernetes (kind + Helm), GitHub Actions.
+
+## Project structure
 
 ```text
-Host=postgres
+TicketManagement/
+├── TicketManagement.Api/        # ASP.NET Core Web API
+├── TicketManagement.Api.Tests/  # xUnit tests
+├── TicketManagement.Ui/         # React + TypeScript frontend
+├── helm/ticket-management/      # Helm chart
+├── docker-compose.yml           # Runs the complete application
+├── kind-config.yaml             # Local Kubernetes cluster config
+├── .env.example                 # Environment variable template
+└── README.md
 ```
 
-Inside Docker, `localhost` refers to the current container. Therefore, the API does not use `localhost` to connect to PostgreSQL.
+## Configuration
 
-## Application URLs
-
-Frontend:
-
-```text
-http://localhost:5173
-```
-
-API:
-
-```text
-http://localhost:5186
-```
-
-PostgreSQL:
-
-```text
-localhost:5432
-```
+| Variable | Purpose |
+| --- | --- |
+| `POSTGRES_PASSWORD` | PostgreSQL password |
+| `JWT_KEY` | Secret key used to sign JWT tokens |
 
 ## Authentication
 
-The application uses JWT bearer authentication.
+Users log in to receive a JWT, which the frontend sends as `Authorization: Bearer <token>`. The key comes from the `JWT_KEY` environment variable.
 
-Users must log in before accessing protected ticket endpoints.
-
-The JWT key is provided to the API through the `JWT_KEY` environment variable.
-
-The frontend sends the token using:
-
-```text
-Authorization: Bearer <token>
-```
-
-The API uses authentication and authorization to protect ticket endpoints.
-
-Administrators have additional permissions to edit tickets.
-
-## Docker
-
-### Build API Image
-
-From the `TicketManagement.Api` folder:
+Check that protection works:
 
 ```bash
-docker build -t ticketmanagement-api-image .
+curl -i http://localhost:5186/api/Tickets   # 401 Unauthorized
 ```
 
-### Build UI Image
+## API
 
-From the `TicketManagement.Ui` folder:
+* Get tickets / get a ticket by ID
+* Create, update, and delete a ticket (update and delete need the Admin role)
+* User login
+
+### Ticket status
+
+The C# enum keeps `InProgress` as its identifier but serializes it as `"In Progress"`:
+
+```csharp
+public enum TicketStatus
+{
+    Open,
+
+    [JsonStringEnumMemberName("In Progress")]
+    InProgress,
+
+    Closed
+}
+```
+
+### Validation rules
+
+* Title: 3–100 characters
+* Description: 5–500 characters
+* Status: Open, In Progress, Closed
+* Priority: Low, Medium, High
+
+## Database
+
+The API uses Entity Framework Core with PostgreSQL. In Docker the connection uses `Host=postgres`, `Port=5432`, `Database=TicketManagementDb`. Apply migrations during local development with:
 
 ```bash
-docker build -t ticketmanagement-ui-image .
+dotnet ef database update
 ```
 
-### Validate Compose Configuration
-
-From the project root:
+## Testing
 
 ```bash
-docker compose config
-```
-
-This verifies the resolved Docker Compose configuration, including environment variables and services.
-
-### Start the Application
-
-```bash
-docker compose up
-```
-
-### Start in the Background
-
-```bash
-docker compose up -d
-```
-
-### Recreate the API Container
-
-When the API Docker image has been rebuilt after code changes:
-
-```bash
-docker compose up -d --force-recreate api
-```
-
-`--force-recreate` forces Docker Compose to create a new API container even if the existing container appears unchanged.
-
-It does not rebuild the image.
-
-Typical workflow after API code changes:
-
-```text
-Change code
-    ↓
-docker build
-    ↓
-docker compose up -d --force-recreate api
-```
-
-### View Compose Containers
-
-```bash
-docker compose ps
-```
-
-This shows containers belonging to the current Docker Compose project.
-
-### View All Running Containers
-
-```bash
-docker ps
-```
-
-This shows all running Docker containers, including containers outside this project.
-
-### View API Logs
-
-```bash
-docker compose logs api
-```
-
-View the most recent API logs:
-
-```bash
-docker compose logs api --tail 50
-```
-
-Follow API logs in real time:
-
-```bash
-docker compose logs -f api
-```
-
-### View PostgreSQL Logs
-
-```bash
-docker compose logs postgres
-```
-
-### Stop the Application
-
-```bash
-docker compose down
-```
-
-`docker compose down` stops and removes the containers and Compose network. The Docker images are not removed.
-
-## Docker Compose Networking
-
-Docker Compose creates a network for the application.
-
-The services are:
-
-```text
-postgres
-api
-ui
-```
-
-The API connects to PostgreSQL using:
-
-```text
-Host=postgres
-Port=5432
-```
-
-`postgres` is the PostgreSQL Compose service name and can be resolved by Docker's internal DNS.
-
-The browser connects to the exposed host ports:
-
-```text
-Frontend → localhost:5173
-API      → localhost:5186
-Postgres → localhost:5432
-```
-
-The API container connects internally to:
-
-```text
-postgres:5432
+dotnet test                # backend, from the project root
+npm test                   # frontend, from TicketManagement.Ui
 ```
 
 ## Kubernetes (kind + Helm)
@@ -315,29 +145,24 @@ kind doesn't pull from Docker Hub for local images — build them, then load int
 ```bash
 docker build -t ticketmanagement-api-image ./TicketManagement.Api
 docker build -t ticketmanagement-ui-image ./TicketManagement.Ui
-kind load docker-image ticketmanagement-api-image --name ticket-management
-kind load docker-image ticketmanagement-ui-image --name ticket-management
+kind load docker-image ticketmanagement-api-image --name ticket-management-system
+kind load docker-image ticketmanagement-ui-image --name ticket-management-system
 ```
 
 ### Install the chart
 
 ```bash
-helm install ticket-management ./helm/ticket-management \
+helm install ticket-management-system ./helm/ticket-management \
   --set secrets.postgresPassword=yourpassword \
   --set secrets.jwtKey=your-jwt-signing-key-min-32-chars
 ```
 
 ### Access the app
 
+Run each in its own terminal (the UI currently calls the API at `localhost:5186`, so both are needed):
+
 ```bash
-### Access the app
-
-Run in Terminal 1:
-
 kubectl port-forward svc/ticket-management-system-ui 5173:80
-
-Run in Terminal 2:
-
 kubectl port-forward svc/ticket-management-system-api 5186:8080
 ```
 
@@ -346,8 +171,8 @@ Then open `http://localhost:5173`.
 ### Tear down
 
 ```bash
-helm uninstall ticket-management
-kind delete cluster --name ticket-management
+helm uninstall ticket-management-system
+kind delete cluster --name ticket-management-system
 ```
 
 Note: Postgres has no persistent volume in this chart — data resets whenever the pod restarts. Fine for local/demo use; a real deployment would add a `PersistentVolumeClaim` and (optionally) an Ingress controller instead of `port-forward`.
@@ -356,7 +181,7 @@ Note: Postgres has no persistent volume in this chart — data resets whenever t
 
 ### Continuous Integration
 
-`.github/workflows/ci.yml` runs on every push to `main`:
+`.github/workflows/ci-cd.yml` runs on every push to `main` and on pull requests targeting `main`:
 
 * Restores, builds, and tests the API (`dotnet restore` / `build` / `test`)
 * Installs dependencies, builds, and tests the UI (`npm ci`, `npm run build`, `npm test`)
@@ -371,307 +196,3 @@ The `deploy-to-kind` job in the same workflow:
 * Secrets (`POSTGRES_PASSWORD`, `JWT_KEY`) come from GitHub Actions repository secrets and are passed via `--set` — the runner never sees `.env`, since that file is local-only and gitignored
 
 Before running it, add `POSTGRES_PASSWORD` and `JWT_KEY` as repository secrets: repo **Settings → Secrets and variables → Actions → New repository secret**.
-
-## Database
-
-PostgreSQL runs as a Docker container.
-
-The API uses Entity Framework Core with the PostgreSQL provider.
-
-The database connection used inside Docker is based on:
-
-```text
-Host=postgres
-Port=5432
-Database=TicketManagementDb
-```
-
-The `postgres` hostname refers to the PostgreSQL service defined in `docker-compose.yml`.
-
-Database migrations are managed using Entity Framework Core.
-
-Apply migrations during local development with:
-
-```bash
-dotnet ef database update
-```
-
-## API
-
-The API provides ticket management functionality including:
-
-* Get tickets
-* Get a ticket by ID
-* Create a ticket
-* Update a ticket
-* Delete a ticket
-* User login
-
-Protected ticket endpoints require a valid JWT.
-
-Editing and deleting tickets require the Admin role.
-
-## Ticket Status
-
-The backend uses the C# enum:
-
-```csharp
-public enum TicketStatus
-{
-    Open,
-
-    [JsonStringEnumMemberName("In Progress")]
-    InProgress,
-
-    Closed
-}
-```
-
-This keeps the C# identifier `InProgress` while exposing the more readable JSON value:
-
-```json
-"In Progress"
-```
-
-The API therefore accepts:
-
-```json
-{
-  "status": "In Progress"
-}
-```
-
-## Development
-
-The backend uses:
-
-* Controllers
-* DTOs
-* Service layer
-* Dependency Injection
-* Entity Framework Core
-* PostgreSQL
-* JWT authentication
-* Authorization
-* Validation
-* Logging
-* Automated tests
-
-The frontend uses:
-
-* React
-* TypeScript
-* Functional components
-* React hooks
-* API integration
-* JWT authentication
-* Client-side validation
-
-## Testing
-
-### Backend Tests
-
-The backend uses xUnit.
-
-Run the backend tests from the project root:
-
-```bash
-dotnet test
-```
-
-### Frontend Tests
-
-The frontend uses Vitest.
-
-From the `TicketManagement.Ui` folder:
-
-```bash
-npm test
-```
-
-Current frontend tests include `TicketList` rendering tests.
-
-## Validation and Error Handling
-
-The frontend performs basic validation before creating or editing a ticket.
-
-Ticket validation includes:
-
-* Title: 3–100 characters
-* Description: 5–500 characters
-* Status: Open, In Progress, Closed
-* Priority: Low, Medium, High
-
-The API also performs request validation and returns appropriate HTTP responses for invalid requests.
-
-For example, invalid enum values result in a `400 Bad Request`.
-
-Authentication failures result in:
-
-```text
-401 Unauthorized
-```
-
-## Logging
-
-The API uses ASP.NET Core logging.
-
-Examples include:
-
-* Information logging when tickets are created
-* Warning logging when a requested ticket is not found
-* Error logging provided by the framework for database/API failures
-
-Logs can be viewed with:
-
-```bash
-docker compose logs api
-```
-
-## API Authentication Test
-
-An unauthenticated request to the protected ticket endpoint:
-
-```bash
-curl -i http://localhost:5186/api/Tickets
-```
-
-should return:
-
-```text
-401 Unauthorized
-```
-
-After logging in and obtaining a JWT, the token can be supplied using:
-
-```text
-Authorization: Bearer <token>
-```
-
-An authenticated request should return the ticket data.
-
-## Environment Variables
-
-| Variable            | Purpose                            |
-| ------------------- | ---------------------------------- |
-| `POSTGRES_PASSWORD` | PostgreSQL password                |
-| `JWT_KEY`           | Secret key used to sign JWT tokens |
-
-Never commit real secrets to the repository.
-
-`.env` should remain local and should be excluded through `.gitignore`.
-
-## Useful Commands
-
-### Check Docker
-
-```bash
-docker --version
-docker compose version
-```
-
-### Check Docker Context
-
-```bash
-docker context ls
-```
-
-Docker Desktop normally uses the `desktop-linux` context on macOS.
-
-### Check Git
-
-```bash
-git --version
-```
-
-### Check Repository Status
-
-```bash
-git status
-```
-
-### Review Changes
-
-```bash
-git diff
-```
-
-## Docker Troubleshooting
-
-### Container Name Conflict
-
-If Compose reports that a container name is already in use, check the containers:
-
-```bash
-docker compose ps
-```
-
-If an old container needs to be removed:
-
-```bash
-docker rm -f ticketmanagement-api-container
-```
-
-Then recreate it with Compose:
-
-```bash
-docker compose up -d
-```
-
-The same principle applies to the PostgreSQL and UI containers if their names conflict.
-
-### Dockerfile Not Found
-
-The API Dockerfile is located in:
-
-```text
-TicketManagement.Api/Dockerfile
-```
-
-Therefore the API image build command should be run from:
-
-```text
-TicketManagement.Api
-```
-
-```bash
-docker build -t ticketmanagement-api-image .
-```
-
-The `.` means the current directory is used as the Docker build context.
-
-### Check Container Environment
-
-To inspect environment variables inside the API container:
-
-```bash
-docker exec ticketmanagement-api-container printenv
-```
-
-To inspect connection-related variables:
-
-```bash
-docker exec ticketmanagement-api-container printenv | grep ConnectionStrings
-```
-
-## Project Status
-
-The project demonstrates a modern full-stack .NET application with:
-
-* ASP.NET Core Web API
-* Entity Framework Core
-* PostgreSQL
-* React
-* TypeScript
-* JWT authentication
-* Authorization
-* Validation
-* Logging
-* Backend unit testing
-* Frontend unit testing
-* Docker
-* Docker Compose
-* Environment-based configuration
-* Git/GitHub
-
-The application can be run as a complete containerized stack using Docker Compose.
