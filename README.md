@@ -10,7 +10,7 @@ This app puts every request in one queue. Each ticket carries a title, descripti
 
 **Who it's for:** small teams handling a steady flow of requests (support, internal service, records or information requests) that need a simple shared queue. It is also a portfolio project covering the full lifecycle: design, build, test, containerize, deploy.
 
-![Ticket list, logged in as an admin](docs/screenshot.png)
+![Ticket list, logged in as an admin](docs/image.png)
 
 ## Quick start
 
