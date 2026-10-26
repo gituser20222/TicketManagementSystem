@@ -21,11 +21,17 @@ services:
       Jwt__Key: ${JWT_KEY}
       Jwt__Issuer: "TicketManagement.Api"
       Jwt__Audience: "TicketManagement.Client"
+      Cors__AllowedOrigins: ${UI_ORIGIN:-http://localhost:5173}
+      Seed__DemoUsers: "true"
+      Seed__DemoPassword: ${DEMO_PASSWORD:-}
     depends_on:
       - postgres
 
   ui:
-    build: ./TicketManagement.Ui
+    build:
+      context: ./TicketManagement.Ui
+      args:
+        VITE_API_URL: ${API_URL:-http://localhost:5186}
     image: ticketmanagement-ui-image
     container_name: ticketmanagement-ui-container
     ports:

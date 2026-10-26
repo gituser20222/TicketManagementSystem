@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { API_URL } from "../config";
 
 import type { Ticket } from "../types/Ticket";
 
@@ -69,22 +70,19 @@ function TicketList({
     }
 
     try {
-      const response = await fetch(
-        `http://localhost:5186/api/Tickets/${ticketId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            title: editTitle.trim(),
-            description: editDescription.trim(),
-            status: editStatus,
-            priority: editPriority,
-          }),
+      const response = await fetch(`${API_URL}/api/Tickets/${ticketId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({
+          title: editTitle.trim(),
+          description: editDescription.trim(),
+          status: editStatus,
+          priority: editPriority,
+        }),
+      });
 
       if (!response.ok) {
         const errorText = await response.text();

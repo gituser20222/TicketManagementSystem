@@ -38,8 +38,21 @@ spec:
                   name: {{ include "ticket-management.fullname" . }}-secrets
                   key: jwt-key
 
+            - name: Cors__AllowedOrigins
+              value: {{ .Values.api.allowedOrigins | quote }}
+
             - name: Jwt__Issuer
               value: "TicketManagement.Api"
 
             - name: Jwt__Audience
               value: "TicketManagement.Client"
+
+            {{- if .Values.seed.demoUsers }}
+            - name: Seed__DemoUsers
+              value: "true"
+            - name: Seed__DemoPassword
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ticket-management.fullname" . }}-secrets
+                  key: demo-password
+            {{- end }}
